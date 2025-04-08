@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- Update CSP to allow file:// protocol and inline styles -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file:; style-src 'self' 'unsafe-inline'; script-src 'self';">
+  <title>File Viewer</title>
+  <!-- Rest of your head content -->
+</head>
+<body>
+  <!-- Body content remains the same -->
+
+  <script>
+    // Use window.require since we're enabling nodeIntegration
+    const { ipcRenderer } = require('electron');
+    
+    ipcRenderer.on('file-to-view', (event, data) => {
+      console.log('Received file data:', data); // Add this for debugging
+      
+      document.getElementById('file-name').textContent = data.name || 'File Viewer';
+      
+      // Hide all containers first
+      document.getElementById('image-container').style.display = 'none';
+      document.getElementById('text-container').style.display = 'none';
+      document.getElementById('error-container').style.display = 'none';
+      
+      if (data.type === 'image') {
+        // Show image with properly formatted path
+        const imgContainer = document.getElementById('image-container');
+        imgContainer.style.display = 'block';
+        const img = document.createElement('img');
+        img.src = `file://${data.path}`;
+        img.alt = data.name;
+        imgContainer.innerHTML = ''; // Clear previous content
+        imgContainer.appendChild(img);
+      } 
+      else if (data.type === 'text') {
+        // Show text
+        const textContainer = document.getElementById('text-container');
+        textContainer.style.display = 'block';
+        
+        // Basic syntax highlighting for some file types
+        if (['js', 'json', 'html', 'css'].includes(data.extension)) {
+          textContainer.classList.add('syntax-highlight');
+        } else {
+          textContainer.classList.remove('syntax-highlight');
+        }
+        
+        textContainer.textContent = data.content;
+      }
+      else if (data.type === 'error') {
+        // Show error
+        const errorContainer = document.getElementById('error-container');
+        errorContainer.style.display = 'block';
+        errorContainer.textContent = `Error: ${data.error}`;
+      }
+    });
+  </script>
+</body>
+</html>
