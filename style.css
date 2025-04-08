@@ -3,6 +3,7 @@ SPDX-License-Identifier: Apache-2.0 */
 
 /* CSS files add styling rules to your content */
 
+/* style.css */
 body {
     font-family: "Benton Sans", "Helvetica Neue", helvetica, arial, sans-serif;
     margin: 2em;
@@ -28,4 +29,39 @@ body {
   
   [draggable] {
     user-select: none;
+  }
+
+  #rename-dialog {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  #rename-dialog input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  #rename-dialog button {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  #rename-dialog button:hover {
+    opacity: 0.9;
+  }
+
+  #delete-dialog {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  #delete-dialog button {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  #delete-dialog button:hover {
+    opacity: 0.9;
   }
