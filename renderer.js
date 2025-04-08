@@ -138,9 +138,9 @@ const getAllFiles = async () => {
   }
   
   updatePathDisplay(result.path);
-  if (currentPath !== '/') {
+  // if (currentPath !== '/') {
     ensureBackButton();
-  }
+  // }
   displayFiles(result.files);
   
   return result.files;

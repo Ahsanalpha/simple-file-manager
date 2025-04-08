@@ -19,12 +19,57 @@ const createWindow = () => {
     if (dirPath !== null) {
       currentPath = dirPath;
     }
-
+  
     try {
       // Get files and their stats
       const files = await fs.promises.readdir(currentPath);
-      const fileDetails = await Promise.all(
-        files.map(async (file) => {
+      const fileDetails = await Promise.all(files.map(async (file) => {
+        try {
+          const filePath = path.join(currentPath, file);
+          const stats = await fs.promises.stat(filePath);
+          return {
+            name: file,
+            isDirectory: stats.isDirectory(),
+            size: stats.size,
+            modified: stats.mtime
+          };
+        } catch (err) {
+          console.error(`Error reading file stats for ${file}:`, err);
+          return {
+            name: file,
+            isDirectory: false,
+            error: true
+          };
+        }
+      }));
+      
+      return {
+        path: currentPath,
+        files: fileDetails
+      };
+    } catch (err) {
+      console.error("Error reading directory:", err);
+      return {
+        path: currentPath,
+        files: [],
+        error: err.message
+      };
+    }
+  });
+
+  ipcMain.handle("open-directory", async (event, dirName) => {
+    const dirPath = path.join(currentPath, dirName);
+    
+    try {
+      const stats = await fs.promises.stat(dirPath);
+      if (stats.isDirectory()) {
+        // Instead of trying to access the handler, just update the current path
+        // and call list-files with the new path
+        currentPath = dirPath;
+        
+        // Return the files in the new directory using the same code as list-files
+        const files = await fs.promises.readdir(currentPath);
+        const fileDetails = await Promise.all(files.map(async (file) => {
           try {
             const filePath = path.join(currentPath, file);
             const stats = await fs.promises.stat(filePath);
@@ -32,41 +77,22 @@ const createWindow = () => {
               name: file,
               isDirectory: stats.isDirectory(),
               size: stats.size,
-              modified: stats.mtime,
+              modified: stats.mtime
             };
           } catch (err) {
             console.error(`Error reading file stats for ${file}:`, err);
             return {
               name: file,
               isDirectory: false,
-              error: true,
+              error: true
             };
           }
-        })
-      );
-
-      return {
-        path: currentPath,
-        files: fileDetails,
-      };
-    } catch (err) {
-      console.error("Error reading directory:", err);
-      return {
-        path: currentPath,
-        files: [],
-        error: err.message,
-      };
-    }
-  });
-
-  ipcMain.handle("open-directory", async (event, dirName) => {
-    const dirPath = path.join(currentPath, dirName);
-
-    try {
-      const stats = await fs.promises.stat(dirPath);
-      if (stats.isDirectory()) {
-        currentPath = dirPath;
-        return await ipcMain.handlers["list-files"].handler();
+        }));
+        
+        return {
+          path: currentPath,
+          files: fileDetails
+        };
       } else {
         return { error: "Not a directory" };
       }
@@ -78,14 +104,63 @@ const createWindow = () => {
 
   ipcMain.handle("navigate-up", async () => {
     const parentPath = path.dirname(currentPath);
-
+    
     // Prevent navigating above the root directory
     if (parentPath === currentPath) {
-      return await ipcMain.handlers["list-files"].handler();
+      // Just return the current directory contents
+      const files = await fs.promises.readdir(currentPath);
+      const fileDetails = await Promise.all(files.map(async (file) => {
+        try {
+          const filePath = path.join(currentPath, file);
+          const stats = await fs.promises.stat(filePath);
+          return {
+            name: file,
+            isDirectory: stats.isDirectory(),
+            size: stats.size,
+            modified: stats.mtime
+          };
+        } catch (err) {
+          return {
+            name: file,
+            isDirectory: false,
+            error: true
+          };
+        }
+      }));
+      
+      return {
+        path: currentPath,
+        files: fileDetails
+      };
     }
-
+    
+    // Update path and return files
     currentPath = parentPath;
-    return await ipcMain.handlers["list-files"].handler();
+    
+    const files = await fs.promises.readdir(currentPath);
+    const fileDetails = await Promise.all(files.map(async (file) => {
+      try {
+        const filePath = path.join(currentPath, file);
+        const stats = await fs.promises.stat(filePath);
+        return {
+          name: file,
+          isDirectory: stats.isDirectory(),
+          size: stats.size,
+          modified: stats.mtime
+        };
+      } catch (err) {
+        return {
+          name: file,
+          isDirectory: false,
+          error: true
+        };
+      }
+    }));
+    
+    return {
+      path: currentPath,
+      files: fileDetails
+    };
   });
 
   ipcMain.handle("open-menu", (e, params) => {
